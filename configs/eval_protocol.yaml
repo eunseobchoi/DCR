@@ -1,0 +1,32 @@
+# External evaluation protocol. Locked by `dcr evaluate lock` before C5/C6 are opened.
+validation_scheme:
+  c4_select_manifest_sha: null
+  c4_mid_manifest_sha: null
+  negative_dev_manifest_sha: null
+  c5_manifest_sha: null
+  c6_manifest_sha: null
+  confirmed_no_group_leakage: false
+
+primary_analysis:
+  only_positive_gt_images: true
+  inference_probability_threshold: null
+  patient_group_mean_then_site_mean: true
+  site_weights: {C5: 0.5, C6: 0.5}
+  main_methods: [M07, M05]
+  main_metric: paired_difference_in_site_equal_positive_dice
+  bootstrap_iterations: 2000
+  bootstrap_rng_seed: 1027
+  confidence_interval: percentile_95
+  seed_policy: average_3_predictions_per_sample_then_cluster_bootstrap
+
+secondary_metrics:
+  boundary_f1_tolerance_px: 2
+  negative_connected_component_connectivity: 8
+  negative_component_min_valid_area_ratio: 0.001
+  negative_detection_threshold: 0.5
+
+no_external_adaptation:
+  retune_after_external_score: false
+  refit_after_external_score: false
+  change_threshold_after_external_score: false
+  repeat_independent_final_test: false

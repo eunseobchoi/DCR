@@ -1,0 +1,86 @@
+# DCR refiner protocol. null = value to be fixed on C4 dev_select before any external evaluation.
+project:
+  name: DCR
+  seed_values: [202601, 202602, 202603]
+  study_type: research_only
+
+data:
+  image_size: [512, 512]
+  resize_mode: preserve_aspect_ratio_letterbox
+  image_interpolation: bilinear
+  mask_interpolation: nearest
+  padding_policy: centered
+  use_valid_mask: true
+  primary_dataset: PolypGen
+  train_sites: [C1, C2, C3]
+  dev_site: C4
+  external_sites: [C5, C6]
+  secondary_datasets: [Kvasir-SEG, CVC-ClinicDB]
+  group_priority: [patient, sequence, near_duplicate]
+  train_predictions: out_of_institution
+  ensemble_combine: arithmetic_mean_of_probabilities
+
+base_models:
+  names: [unet_r34, deeplab_r50, segformer_b0]   # p1, p2, p3 order
+  pretrained_type: imagenet_encoder_only
+  checkpoints_manifest: null
+
+refiner:
+  architecture: refiner_unet
+  in_channels: 6
+  out_heads: [a, b]
+  widths: [24, 48, 96, 192]
+  head_final_layer_init: zeros
+  use_sigmoid_on_heads: false
+  actual_param_count: 1097282             # M05/M07, measured by count_parameters
+
+geometry:
+  default_block_size: 32
+  ablation_block_sizes: [16, 64]
+  max_rank: 2
+  basis_backend: cpu_svd
+  projector_backend: batched_matmul
+  rank_relative_tolerance: 1.0e-5
+  rank_absolute_tolerance: 1.0e-7
+  backprop_through_basis: false
+  use_dense_n_by_n_projector: false
+
+loss:
+  segmentation: bce_plus_soft_dice
+  dice_empty_target_policy: exclude_dice_keep_bce
+  patch_component_reduction: equal_mean_of_eligible_tiles
+  lambda_parallel: null
+  lambda_perpendicular: null
+  lambda_residual_m05: null
+  mu_keep: null
+  keep_confidence_low: 0.1
+  keep_confidence_high: 0.9
+  keep_only_baseline_correct: true
+
+training:
+  beta: 1.0
+  optimizer: adamw
+  learning_rate: null
+  weight_decay: null
+  updates: null
+  effective_batch: null
+  augmentation_policy: null               # augmented RGB is re-predicted by the frozen base models
+  fp32_projector: true
+
+selection:
+  site: C4
+  subset: dev_select
+  beta_grid: [0.0, 0.25, 0.5, 0.75, 1.0]
+  candidate_eval_thresholds: null
+  common_error_threshold: 0.5
+  max_normal_prediction_harm_rate: 0.005
+  max_negative_fp_frame_rate_increase_abs: 0.01
+  objective: maximize_positive_dice_under_constraints
+  tie_break_policy: lower_beta_then_lower_harm
+  intermediate_check: dev_mid_once
+  intermediate_dice_improvement_abs: 0.005
+
+runtime:
+  backend: cpu        # cpu | gpu | ipu
+  ipu_devices_per_job: null
+  cache_compiled_graphs: true

@@ -1,0 +1,10 @@
+# Copy to configs/paths.yaml (git-ignored) and fill in. Never hard-code paths in code.
+project_root: "."
+raw_polypgen_root: null
+raw_kvasir_seg_root: null
+raw_cvc_clinicdb_root: null
+manifest_root: data/manifests
+cache_root: data/caches
+checkpoint_root: runs
+result_root: results
+external_label_vault: null   # unreadable by training/selection jobs until the evaluation lock exists
